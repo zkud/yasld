@@ -42,7 +42,7 @@ function* range(start, end) {
 }
 
 let sum_of_squares = 0;
-for index of range(0, 100) {
+for (index of range(0, 100)) {
     sum_of_squares = sum_of_squares + index;
 }
 
