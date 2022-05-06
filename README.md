@@ -2,7 +2,7 @@
 Yet Another Simple Lisp Dialect
 
 ## Presequencies
-You should have bot rust (2018 edition) and node js 14 installed
+You should have both rust (2018 edition) and node js 14 installed
 
 ## Short intro
 Please check the documentation for a implemented dialect in the dialect.md
