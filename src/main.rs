@@ -12,7 +12,7 @@ fn main() {
   let content = fs::read_to_string(filename).expect("cannot read file");
   println!("the content is:\n{}", content);
 
-  println!("Parsed tokens:\n{}", content);
+  println!("Parsed tokens:");
   let parsed_tokens = lexer::parse(&content);
   for token in parsed_tokens {
     println!("{:?}", token);
