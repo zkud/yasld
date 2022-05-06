@@ -1,3 +1,20 @@
+mod lexer;
+
+use std::env;
+use std::fs;
+
 fn main() {
-    println!("Hello, world!");
+  let args: Vec<String> = env::args().collect();
+
+  let filename = &args[1];
+  println!("checking {}...", filename);
+
+  let content = fs::read_to_string(filename).expect("cannot read file");
+  println!("the content is:\n{}", content);
+
+  println!("Parsed tokens:\n{}", content);
+  let parsed_tokens = lexer::parse(&content);
+  for token in parsed_tokens {
+    println!("{:?}", token);
+  }
 }
