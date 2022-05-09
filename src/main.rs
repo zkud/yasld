@@ -1,4 +1,5 @@
 mod lexer;
+mod parser;
 
 use std::env;
 use std::fs;
@@ -14,7 +15,9 @@ fn main() {
 
   println!("Parsed tokens:");
   let parsed_tokens = lexer::parse(&content);
-  for token in parsed_tokens {
+  for token in &parsed_tokens {
     println!("{:?}", token);
   }
+
+  let ast_stmns = parser::parse(&parsed_tokens);
 }

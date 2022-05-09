@@ -1,7 +1,7 @@
 use regex;
 use std::collections::LinkedList;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
   OpenBracket,
   CloseBracket,
