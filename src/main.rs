@@ -9,7 +9,7 @@ fn main() {
   let args: Vec<String> = env::args().collect();
 
   let filename = &args[1];
-  println!("reading {}...", filename);
+  println!("Reading {}...", filename);
   let content = fs::read_to_string(filename).expect("cannot read file");
 
   println!("Parsing {}...", filename);

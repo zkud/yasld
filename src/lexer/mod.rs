@@ -101,13 +101,13 @@ fn range_matches(s: &str) -> bool {
 
 #[inline]
 fn number_matches(s: &str) -> bool {
-  let number_regex = regex::Regex::new(r"^[-+]?[0-9]*.?[0-9]+([eE][-+]?[0-9]+)?[.]*").unwrap();
+  let number_regex = regex::Regex::new(r"^[-+]?[0-9]*[.]?[0-9]+([eE][-+]?[0-9]+)?[.]*").unwrap();
   number_regex.is_match(s)
 }
 
 #[inline]
 fn get_number_substr(s: &str) -> String {
-  let number_regex = regex::Regex::new(r"^[-+]?[0-9]*.?[0-9]+([eE][-+]?[0-9]+)?[.]*").unwrap();
+  let number_regex = regex::Regex::new(r"^[-+]?[0-9]*[.]?[0-9]+([eE][-+]?[0-9]+)?[.]*").unwrap();
   let positions = number_regex.find(s).unwrap();
   String::from(&s[positions.start()..positions.end()])
 }

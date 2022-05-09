@@ -127,7 +127,9 @@ impl ExpressionIter {
 
   #[inline]
   fn pop_binary_function(&mut self) -> Option<ASTExpression> {
-    let (left, right) = match self.current_token() {
+    let current_token = self.current_token();
+
+    let (left, right) = match current_token {
       Token::Bigger
       | Token::Less
       | Token::Eq
@@ -141,7 +143,7 @@ impl ExpressionIter {
       _ => return None,
     };
 
-    Some(match self.current_token() {
+    Some(match current_token {
       Token::Bigger => ASTExpression::BiggerExpression { left, right },
       Token::Less => ASTExpression::LessExpression { left, right },
       Token::Eq => ASTExpression::EqExpression { left, right },
@@ -171,7 +173,7 @@ impl ExpressionIter {
 
   #[inline]
   fn pop_unary_function(&mut self) -> Option<ASTExpression> {
-    match &self.tokens[self.cursor] {
+    match self.current_token() {
       Token::OpenBracket => {
         self.move_cursor();
 
