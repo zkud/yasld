@@ -1,6 +1,6 @@
+mod generator;
 mod lexer;
 mod parser;
-mod generator;
 
 use std::env;
 use std::fs;

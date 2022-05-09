@@ -66,7 +66,7 @@ impl ExpressionIter {
             let range = { Box::new(self.pop_expression()) };
 
             self.declared_variables.insert(index.clone());
-            let body = { Box::new(self.pop_expression()) }; 
+            let body = { Box::new(self.pop_expression()) };
             self.declared_variables.remove(&index);
 
             Some(ASTExpression::ForDefinition { index, range, body })
@@ -81,7 +81,11 @@ impl ExpressionIter {
         let then_clause = Box::new(self.pop_expression());
         let else_clause = Box::new(self.pop_expression());
 
-        Some(ASTExpression::IFDefinition { condition, then_clause, else_clause })
+        Some(ASTExpression::IFDefinition {
+          condition,
+          then_clause,
+          else_clause,
+        })
       }
       _ => None,
     }
