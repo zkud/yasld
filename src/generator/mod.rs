@@ -12,6 +12,6 @@ function* range(start, end) {
     }
 }";
 
-pub fn generate_code(statements: LinkedList<ASTExpression>) -> String {
+pub fn generate_code(statements: &LinkedList<ASTExpression>) -> String {
   GENERATED_HEADER.to_owned()
 }
