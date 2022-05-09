@@ -6,6 +6,7 @@ pub enum Token {
   OpenBracket,
   CloseBracket,
   Name(String),
+  Range,
   Var,
   Number(String),
   Set,
@@ -22,7 +23,6 @@ pub enum Token {
   BinaryOr,
   BinaryAnd,
   BinaryNeg,
-  Semicolon,
   Space,
 }
 
@@ -45,13 +45,13 @@ fn extract_token(program: &str, cursor: usize) -> (Token, usize) {
   match &program[cursor..] {
     open_bracket if open_bracket.starts_with("(") => (Token::OpenBracket, cursor + 1),
     close_bracket if close_bracket.starts_with(")") => (Token::CloseBracket, cursor + 1),
-    semicolon if semicolon.starts_with(";") => (Token::Semicolon, cursor + 1),
     space if space.starts_with(" ") || space.starts_with("\n") || space.starts_with("\t") => {
       (Token::Space, cursor + 1)
     }
     if_def if if_matches(if_def) => (Token::If, cursor + 2),
     var_def if var_matches(var_def) => (Token::Var, cursor + 3),
     set_def if set_matches(set_def) => (Token::Set, cursor + 3),
+    range_def if range_matches(range_def) => (Token::Range, cursor + 5),
     number if number_matches(number) => {
       let number: String = get_number_substr(number);
       let number_lenght = number.len();
@@ -92,6 +92,11 @@ fn var_matches(s: &str) -> bool {
 #[inline]
 fn set_matches(s: &str) -> bool {
   s.starts_with("set ") || s.starts_with("set\n") || s.starts_with("set\t")
+}
+
+#[inline]
+fn range_matches(s: &str) -> bool {
+  s.starts_with("range ") || s.starts_with("range\n") || s.starts_with("range\t")
 }
 
 #[inline]

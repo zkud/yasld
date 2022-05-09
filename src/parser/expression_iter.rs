@@ -1,29 +1,20 @@
 use super::ASTExpression;
 use crate::lexer::Token;
-use std::collections::HashMap;
+use std::collections::HashSet;
 use std::collections::LinkedList;
 
-#[derive(Clone, PartialEq)]
-pub enum VariableType {
-  Range,
-  Number,
-  Bool,
-}
-
 pub struct ExpressionIter {
-  declared_variables: HashMap<String, VariableType>,
+  declared_variables: HashSet<String>,
   cursor: usize,
   tokens: Vec<Token>,
-  operations_required_type: LinkedList<VariableType>,
 }
 
 impl ExpressionIter {
   pub fn new(raw_tokens: &LinkedList<Token>) -> Self {
     Self {
-      declared_variables: HashMap::new(),
+      declared_variables: HashSet::new(),
       tokens: ExpressionIter::strip_tokens(raw_tokens),
       cursor: 0,
-      operations_required_type: LinkedList::new(),
     }
   }
 
@@ -40,6 +31,14 @@ impl ExpressionIter {
     Reqursive traverse among the tokens stream
   */
   fn pop_expression(&mut self) -> ASTExpression {
+    if let Some(expression) = self.pop_ternary_function() {
+      return expression;
+    }
+
+    if let Some(expression) = self.pop_variable_operation() {
+      return expression;
+    }
+
     if let Some(expression) = self.pop_binary_function() {
       return expression;
     }
@@ -56,24 +55,89 @@ impl ExpressionIter {
   }
 
   #[inline]
+  fn pop_ternary_function(&mut self) -> Option<ASTExpression> {
+    match self.current_token() {
+      Token::For => {
+        self.move_cursor();
+        match self.current_token() {
+          Token::Name(index) if !self.is_declared_variable(&index) => {
+            self.move_cursor();
+
+            let range = { Box::new(self.pop_expression()) };
+
+            self.declared_variables.insert(index.clone());
+            let body = { Box::new(self.pop_expression()) }; 
+            self.declared_variables.remove(&index);
+
+            Some(ASTExpression::ForDefinition { index, range, body })
+          }
+          _ => panic!("Incorrect index name"),
+        }
+      }
+      Token::If => {
+        self.move_cursor();
+
+        let condition = Box::new(self.pop_expression());
+        let then_clause = Box::new(self.pop_expression());
+        let else_clause = Box::new(self.pop_expression());
+
+        Some(ASTExpression::IFDefinition { condition, then_clause, else_clause })
+      }
+      _ => None,
+    }
+  }
+
+  #[inline]
+  fn pop_variable_operation(&mut self) -> Option<ASTExpression> {
+    match self.current_token() {
+      Token::Set => {
+        self.move_cursor();
+        match self.current_token() {
+          Token::Name(variable) if self.is_declared_variable(&variable) => {
+            self.move_cursor();
+            Some(ASTExpression::SetDefinition {
+              name: variable.clone(),
+              new_value: Box::new(self.pop_expression()),
+            })
+          }
+          _ => panic!("Incorrect variable name"),
+        }
+      }
+      Token::Var => {
+        self.move_cursor();
+        match self.current_token() {
+          Token::Name(variable) if !self.is_declared_variable(&variable) => {
+            self.move_cursor();
+            self.declared_variables.insert(variable.clone());
+            Some(ASTExpression::VarDefinition {
+              name: variable.clone(),
+              value: Box::new(self.pop_expression()),
+            })
+          }
+          _ => panic!("Incorrect variable name"),
+        }
+      }
+      _ => None,
+    }
+  }
+
+  #[inline]
   fn pop_binary_function(&mut self) -> Option<ASTExpression> {
-    let (left, right) = match &self.tokens[self.cursor] {
-      Token::Bigger | Token::Less | Token::Eq => {
-        self.reduce_binary_function(VariableType::Number, VariableType::Bool)
-      }
-      Token::Plus | Token::Minus | Token::Divide | Token::Multiply => {
-        self.reduce_binary_function(VariableType::Number, VariableType::Number)
-      }
-      Token::BinaryAnd | Token::BinaryOr => {
-        self.reduce_binary_function(VariableType::Bool, VariableType::Bool)
-      }
-      Token::Name(name) if name == "range" => {
-        self.reduce_binary_function(VariableType::Number, VariableType::Range)
-      }
+    let (left, right) = match self.current_token() {
+      Token::Bigger
+      | Token::Less
+      | Token::Eq
+      | Token::Plus
+      | Token::Minus
+      | Token::Divide
+      | Token::Multiply
+      | Token::BinaryAnd
+      | Token::BinaryOr
+      | Token::Range => self.reduce_binary_function(),
       _ => return None,
     };
 
-    Some(match &self.tokens[self.cursor] {
+    Some(match self.current_token() {
       Token::Bigger => ASTExpression::BiggerExpression { left, right },
       Token::Less => ASTExpression::LessExpression { left, right },
       Token::Eq => ASTExpression::EqExpression { left, right },
@@ -83,7 +147,7 @@ impl ExpressionIter {
       Token::Plus => ASTExpression::PlusExpression { left, right },
       Token::BinaryAnd => ASTExpression::BinaryAndExpression { left, right },
       Token::BinaryOr => ASTExpression::BinaryOrExpression { left, right },
-      Token::Name(name) if name == "range" => ASTExpression::RangeDefinition {
+      Token::Range => ASTExpression::RangeDefinition {
         start: left,
         end: right,
       },
@@ -92,21 +156,11 @@ impl ExpressionIter {
   }
 
   #[inline]
-  fn reduce_binary_function(
-    &mut self,
-    required_args_type: VariableType,
-    function_type: VariableType,
-  ) -> (Box<ASTExpression>, Box<ASTExpression>) {
-    self.cursor += 1;
+  fn reduce_binary_function(&mut self) -> (Box<ASTExpression>, Box<ASTExpression>) {
+    self.move_cursor();
 
-    if !self.operations_required_type.is_empty() {
-      assert_eq!(self.operations_required_type.back(), function_type);
-    }
-
-    self.operations_required_type.push_back(required_args_type);
     let left = self.pop_expression();
     let right = self.pop_expression();
-    self.operations_required_type.pop_back();
 
     (Box::new(left), Box::new(right))
   }
@@ -115,27 +169,20 @@ impl ExpressionIter {
   fn pop_unary_function(&mut self) -> Option<ASTExpression> {
     match &self.tokens[self.cursor] {
       Token::OpenBracket => {
-        self.cursor += 1;
+        self.move_cursor();
 
         let result = self.pop_expression();
 
-        assert!(matches!(self.tokens[self.cursor], Token::CloseBracket));
-        self.cursor += 1;
+        assert!(matches!(self.current_token(), Token::CloseBracket));
+        self.move_cursor();
 
         Some(result)
       }
       Token::BinaryNeg => {
-        self.cursor += 1;
-
-        assert_eq!(self.operations_required_type.back(), VariableType::Bool);
-
-        self.operations_required_type.push_back(VariableType::Bool);
-        let result = Some(ASTExpression::BinaryNegExpression(Box::new(
+        self.move_cursor();
+        Some(ASTExpression::BinaryNegExpression(Box::new(
           self.pop_expression(),
-        )));
-        self.operations_required_type.pop_back();
-
-        result
+        )))
       }
       _ => None,
     }
@@ -143,17 +190,17 @@ impl ExpressionIter {
 
   #[inline]
   fn pop_literal(&mut self) -> Option<ASTExpression> {
-    match &self.tokens[self.cursor] {
+    match self.current_token() {
       Token::Number(value) => {
-        self.cursor += 1;
+        self.move_cursor();
         Some(ASTExpression::NumberLiteral(value.clone()))
       }
       Token::Bool(value) => {
-        self.cursor += 1;
+        self.move_cursor();
         Some(ASTExpression::BoolLiteral(value.clone()))
       }
-      Token::Name(name) if self.is_appropriate_variable(name) => {
-        self.cursor += 1;
+      Token::Name(name) if self.is_declared_variable(&name) => {
+        self.move_cursor();
         Some(ASTExpression::NameReference(name.clone()))
       }
       _ => None,
@@ -161,16 +208,18 @@ impl ExpressionIter {
   }
 
   #[inline]
-  fn is_appropriate_variable(&self, name: &str) -> bool {
-    if let Some(variable_type) = self.declared_variables.get(name) {
-      if let Some(required_type) = self.operations_required_type.back() {
-        return required_type == variable_type;
-      } else {
-        return true;
-      }
-    }
+  fn is_declared_variable(&self, name: &str) -> bool {
+    self.declared_variables.contains(name)
+  }
 
-    false
+  #[inline]
+  fn current_token(&self) -> Token {
+    self.tokens[self.cursor].clone()
+  }
+
+  #[inline]
+  fn move_cursor(&mut self) {
+    self.cursor += 1;
   }
 }
 

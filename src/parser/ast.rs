@@ -1,11 +1,11 @@
 pub enum ASTExpression {
   VarDefinition {
     name: String,
-    value: String,
+    value: Box<ASTExpression>,
   },
   SetDefinition {
     name: String,
-    new_value: String,
+    new_value: Box<ASTExpression>,
   },
   IFDefinition {
     condition: Box<ASTExpression>,
@@ -13,7 +13,7 @@ pub enum ASTExpression {
     else_clause: Box<ASTExpression>,
   },
   ForDefinition {
-    index: Box<ASTExpression>,
+    index: String,
     range: Box<ASTExpression>,
     body: Box<ASTExpression>,
   },
