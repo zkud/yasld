@@ -4,6 +4,7 @@ mod parser;
 
 use std::env;
 use std::fs;
+use std::io::prelude::*;
 
 fn main() {
   let args: Vec<String> = env::args().collect();
@@ -19,5 +20,6 @@ fn main() {
   println!("Generating code for {}...", filename);
   let code = generator::generate_code(&ast_stmns);
 
-  println!("Code is:\n{}", code);
+  let mut code_file = fs::File::create(format!("{}.js", filename)).unwrap();
+  code_file.write_all(code.as_bytes()).unwrap();
 }
