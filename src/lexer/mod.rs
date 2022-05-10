@@ -24,6 +24,7 @@ pub enum Token {
   BinaryAnd,
   BinaryNeg,
   Space,
+  Report,
 }
 
 pub fn parse(program: &str) -> LinkedList<Token> {
@@ -70,11 +71,12 @@ fn extract_token(program: &str, cursor: usize) -> (Token, usize) {
     eq if eq.starts_with("==") => (Token::Eq, cursor + 2),
     bigger if bigger.starts_with(">") => (Token::Bigger, cursor + 1),
     less if less.starts_with("<") => (Token::Less, cursor + 1),
+    report if report_matches(report) => (Token::Report, cursor + 6),
     name if name_matches(name) => {
       let name: String = get_name_substr(name);
       let name_lenght = name.len();
       (Token::Name(name), cursor + name_lenght)
-    }
+    },
     _ => panic!("Unexpected token"),
   }
 }
@@ -148,4 +150,9 @@ fn get_name_substr(s: &str) -> String {
   let name_regex = regex::Regex::new(r"^[\w][\w0-9_]*").unwrap();
   let positions = name_regex.find(s).unwrap();
   String::from(&s[positions.start()..positions.end()])
+}
+
+#[inline]
+fn report_matches(s: &str) -> bool {
+  s.starts_with("report ") || s.starts_with("report\n") || s.starts_with("report\t")
 }

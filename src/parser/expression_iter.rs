@@ -190,6 +190,12 @@ impl ExpressionIter {
           self.pop_expression(),
         )))
       }
+      Token::Report => {
+        self.move_cursor();
+        Some(ASTExpression::ReportDefinition(Box::new(
+          self.pop_expression(),
+        )))
+      }
       _ => None,
     }
   }

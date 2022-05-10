@@ -58,6 +58,7 @@ pub enum ASTExpression {
     left: Box<ASTExpression>,
     right: Box<ASTExpression>,
   },
+  ReportDefinition(Box<ASTExpression>),
   NameReference(String),
   BoolLiteral(bool),
   NumberLiteral(String),
