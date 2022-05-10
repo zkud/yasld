@@ -150,7 +150,7 @@ fn generate_code_for_unary_function(statement: &ASTExpression) -> Option<String>
       Some(format!("(!{})", generate_code_for_statement(expression)))
     }
     ASTExpression::ReportDefinition(expression) => {
-      Some(format!("console.log({});", generate_code_for_statement(expression)))
+      Some(format!("console.log({});\n", generate_code_for_statement(expression)))
     }
     _ => None,
   }
